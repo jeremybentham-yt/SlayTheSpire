@@ -4,11 +4,20 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from collections import defaultdict
 import plotly.express as px
+from pathlib import Path
 
 #Your path might looks something like 
 #   - For Windows: C:\Users\YOUR_NAME\AppData\Roaming\SlayTheSpire2\steam\STRING OF NUMBERS\profile1\saves\history
 #   - For Mac: ~/Library/Application Support/SlayTheSpire2/
+#   - Linux: 
+#       ~/.local/share/Steam/steamapps/compatdata/2868840/pfx/drive_c/users/steamuser/AppData/Roaming/SlayTheSpire2/
+#       ~/snap/steam/common/.steam/steam/steamapps/compatdata/2868840/pfx/drive_c/users/steamuser/AppData/Roaming/SlayTheSpire2/
+#       ~/snap/steam/common/.local/share/SlayTheSpire2/steam/<number string>/profile1/saves/history
+
+# Notes: sts 2 game id in steam is 2868840
+
 folder_path = r"INSERT YOUR PATH HERE"
+folder_path = Path(folder_path).expanduser() # expands ~
 
 def clean_relic_name(raw_name):
     return raw_name.replace("RELIC.", "").replace("_", " ").title()
