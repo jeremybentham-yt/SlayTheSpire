@@ -16,7 +16,7 @@ from pathlib import Path
 
 # Notes: sts 2 game id in steam is 2868840
 
-folder_path = r"/home/justin/.local/share/SlayTheSpire2/steam/76561198255113960/profile1/saves/history"
+folder_path = r"INSERT YOUR PATH HERE"
 folder_path = Path(folder_path).expanduser() # expands ~
 
 def clean_relic_name(raw_name):
@@ -97,7 +97,8 @@ def build_dataframe(folder_path):
             "Win": run["Win"],
             "killed_by_event": run["killed_by_event"],
             "killed_by_encounter": run["killed_by_encounter"],
-            "game_build": run["game_build"]
+            "game_build": run["game_build"],
+            "seed" : run["seed"]
         }
 
         for relic in all_relics:
@@ -115,7 +116,7 @@ df = build_dataframe(folder_path)
 df.to_csv("raw_data.csv", index=False)
 
 # --- IDENTIFY RELIC COLUMNS ---
-meta_cols = ["Run", "Character", "Ascension", "Run Time (min)", "Win", "game_build", "killed_by_event", "killed_by_encounter"]
+meta_cols = ["Run", "Character", "Ascension", "Run Time (min)", "Win", "game_build", "killed_by_event", "killed_by_encounter", "seed"]
 relic_cols = [col for col in df.columns if col not in meta_cols]
 
 # --- BUILD res_df (winrate + count per relic) ---
