@@ -6,17 +6,17 @@ from collections import defaultdict
 import plotly.express as px
 from pathlib import Path
 
-#Your path might looks something like 
+#Your path might looks something like
 #   - For Windows: C:\Users\YOUR_NAME\AppData\Roaming\SlayTheSpire2\steam\STRING OF NUMBERS\profile1\saves\history
 #   - For Mac: ~/Library/Application Support/SlayTheSpire2/
-#   - Linux: 
+#   - Linux:
 #       ~/.local/share/Steam/steamapps/compatdata/2868840/pfx/drive_c/users/steamuser/AppData/Roaming/SlayTheSpire2/
 #       ~/snap/steam/common/.steam/steam/steamapps/compatdata/2868840/pfx/drive_c/users/steamuser/AppData/Roaming/SlayTheSpire2/
 #       ~/snap/steam/common/.local/share/SlayTheSpire2/steam/<number string>/profile1/saves/history
 
 # Notes: sts 2 game id in steam is 2868840
 
-folder_path = r"INSERT YOUR PATH HERE"
+folder_path = r"/home/justin/.local/share/SlayTheSpire2/steam/76561198255113960/profile1/saves/history"
 folder_path = Path(folder_path).expanduser() # expands ~
 
 def clean_relic_name(raw_name):
@@ -42,12 +42,19 @@ def extract_run_data(file_path):
 
     # Metadata
     win = data.get("win", False)
+    game_build = data.get("build_id", None)
     ascension = data.get("ascension", None)
+    killed_by_event = data.get("killed_by_event", None)
+    killed_by_encounter = data.get("killed_by_encounter", None)
     character = clean_character_name(players[0].get("character", ""))
     run_time_seconds = data.get("run_time", 0)
     run_time_minutes = round(run_time_seconds / 60, 2)
+    seed = data.get("seed", None)
 
-    return relics, win, ascension, character, run_time_minutes
+
+    return relics, win, ascension, character, run_time_minutes, game_build, killed_by_event,  killed_by_encounter, seed
+
+    #
 
 
 def build_dataframe(folder_path):
@@ -59,15 +66,19 @@ def build_dataframe(folder_path):
 
         file_path = os.path.join(folder_path, filename)
 
-        relics, win, ascension, character, run_time = extract_run_data(file_path)
+        relics, win, ascension, character, run_time_minutes, game_build, killed_by_event,  killed_by_encounter, seed = extract_run_data(file_path)
 
         run_data = {
             "Run": filename,
             "Character": character,
             "Ascension": ascension,
-            "Run Time (min)": run_time,
+            "Run Time (min)": run_time_minutes,
             "Win": win,
-            "relics": relics
+            "relics": relics,
+            "game_build": game_build,
+            "killed_by_event": killed_by_event,
+            "killed_by_encounter": killed_by_encounter,
+            "seed": seed
         }
 
         all_runs.append(run_data)
@@ -83,7 +94,10 @@ def build_dataframe(folder_path):
             "Character": run["Character"],
             "Ascension": run["Ascension"],
             "Run Time (min)": run["Run Time (min)"],
-            "Win": run["Win"]
+            "Win": run["Win"],
+            "killed_by_event": run["killed_by_event"],
+            "killed_by_encounter": run["killed_by_encounter"],
+            "game_build": run["game_build"]
         }
 
         for relic in all_relics:
@@ -98,8 +112,10 @@ def build_dataframe(folder_path):
 # --- LOAD DATA ---
 df = build_dataframe(folder_path)
 
+df.to_csv("raw_data.csv", index=False)
+
 # --- IDENTIFY RELIC COLUMNS ---
-meta_cols = ["Run", "Character", "Ascension", "Run Time (min)", "Win"]
+meta_cols = ["Run", "Character", "Ascension", "Run Time (min)", "Win", "game_build", "killed_by_event", "killed_by_encounter"]
 relic_cols = [col for col in df.columns if col not in meta_cols]
 
 # --- BUILD res_df (winrate + count per relic) ---
@@ -114,7 +130,7 @@ for relic in relic_cols:
         results.append({
             "Relic": relic,
             "Winrate": winrate,
-            "Count": count
+            "Count": count,
         })
 
 res_df = pd.DataFrame(results)
@@ -201,7 +217,7 @@ def extract_card_choices(obj, run_win, in_shop=False):
 
         for key, value in obj.items():
             if key == "card_choices":
-                
+
                 # 🚫 Skip card choices if we're in a shop
                 if current_in_shop:
                     continue
@@ -231,7 +247,7 @@ def extract_card_choices(obj, run_win, in_shop=False):
 # Iterate files
 # ================================
 for filename in os.listdir(folder_path):
-    
+
     file_path = os.path.join(folder_path, filename)
 
     with open(file_path, "r") as f:
